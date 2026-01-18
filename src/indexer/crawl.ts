@@ -1,12 +1,10 @@
 import {CheerioCrawler,Configuration} from 'crawlee';
 import {env,SeedUrl} from '../config/env.js';
-import {extractHeadings,extractSparseContent} from '../query/extract.js';
 
 export type CrawledPage={
 	url: string;
 	title: string;
-	headings: string;
-	sparseContent: string;
+	html: string;
 	sourceName: string;
 }
 
@@ -40,55 +38,58 @@ export async function crawlSite(
 
 			try {
 				const title=$('title').text().trim()||$('h1').first().text().trim()||'Untitled';
-				const rawHtml=$.html();
-				const headings=extractHeadings(rawHtml);
-				const sparseContent=extractSparseContent(rawHtml);
+				const html=$.html();
 
+				// Index the main page
 				await onPage({
 					url: baseUrl,
 					title,
-					headings: headings.join(' . '),
-					sparseContent,
+					html,
 					sourceName: seed.name
 				});
 				pagesProcessed++;
 				log.info(`Processed page ${pagesProcessed}: ${title}`);
 
+				// Extract and index anchor sections for granular search
 				const anchorLinks=extractAnchorLinks($,baseUrl,navSelectors);
 				for (const anchor of anchorLinks) {
 					if (processedUrls.has(anchor.url)) continue;
 					processedUrls.add(anchor.url);
 
-					const sectionContent=extractSectionContent($,anchor.anchor);
-					await onPage({
-						url: anchor.url,
-						title: anchor.title,
-						headings: anchor.title,
-						sparseContent: sectionContent||anchor.title,
-						sourceName: seed.name
-					});
-					pagesProcessed++;
+					// Extract section-specific HTML for this anchor
+					const sectionHtml=extractSectionHtml($,anchor.anchor);
+					if (sectionHtml) {
+						await onPage({
+							url: anchor.url,
+							title: anchor.title,
+							html: sectionHtml,
+							sourceName: seed.name
+						});
+						pagesProcessed++;
+					}
 				}
 				if (anchorLinks.length>0) {
 					log.info(`Indexed ${anchorLinks.length} anchor sections from ${title}`);
 				}
+
+				// Enqueue links for further crawling
+				await enqueueLinks({
+					selector: navSelectors,
+					strategy: 'same-domain',
+					transformRequestFunction: (req) => {
+						const normalized=normalizeUrl(req.url,loadedUrl);
+						if (normalized&&shouldCrawl(normalized)&&isInSameSection(normalized,seed.url)) {
+							req.url=normalized;
+							return req;
+						}
+						return false;
+					}
+				});
+
 			} catch (error) {
 				errors++;
 				log.error(`Error processing ${baseUrl}: ${error}`);
 			}
-
-			await enqueueLinks({
-				selector: navSelectors,
-				strategy: 'same-domain',
-				transformRequestFunction: (req) => {
-					const normalized=normalizeUrl(req.url,loadedUrl);
-					if (normalized&&shouldCrawl(normalized)&&isInSameSection(normalized,seed.url)) {
-						req.url=normalized;
-						return req;
-					}
-					return false;
-				}
-			});
 		},
 
 		failedRequestHandler({request,log}) {
@@ -110,41 +111,21 @@ export async function crawlSite(
 
 function getNavSelectors(mode: SeedUrl['navigationMode']): string {
 	const anchorSelectors=[
-		'#toc a',
-		'.toc a',
-		'.table-of-contents a',
-		'[id*="toc"] a'
+		'#toc a','.toc a','.table-of-contents a','[id*="toc"] a'
 	];
-
 	const sidebarSelectors=[
-		'nav a',
-		'aside a',
-		'.sidebar a',
-		'[role="navigation"] a',
-		'.nav-sidebar a',
-		'.docs-nav a',
-		'.menu a',
-		'#sidebar a'
+		'nav a','aside a','.sidebar a','[role="navigation"] a',
+		'.nav-sidebar a','.docs-nav a','.menu a','#sidebar a'
 	];
-
 	const navbarSelectors=[
-		'header a',
-		'.navbar a',
-		'.nav a',
-		'.header-nav a',
-		'.top-nav a',
-		'[role="navigation"] a',
+		'header a','.navbar a','.nav a','.header-nav a','.top-nav a','[role="navigation"] a',
 	];
-
 	const anchors=anchorSelectors.join(', ');
 
 	switch (mode) {
-		case 'sidebar':
-			return `${sidebarSelectors.join(', ')}, ${anchors}`;
-		case 'navbar':
-			return `${navbarSelectors.join(', ')}, ${anchors}`;
-		case 'auto':
-			return `${sidebarSelectors.join(', ')}, ${navbarSelectors.join(', ')}, ${anchors}`;
+		case 'sidebar': return `${sidebarSelectors.join(', ')}, ${anchors}`;
+		case 'navbar': return `${navbarSelectors.join(', ')}, ${anchors}`;
+		case 'auto': return `${sidebarSelectors.join(', ')}, ${navbarSelectors.join(', ')}, ${anchors}`;
 	}
 }
 
@@ -222,31 +203,39 @@ function extractAnchorLinks($: any,pageUrl: string,navSelectors: string): Anchor
 	return entries;
 }
 
+/**
+ * Extract HTML for a specific section (from anchor to next heading)
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractSectionContent($: any,anchor: string): string {
+function extractSectionHtml($: any,anchor: string): string|null {
 	const escapedAnchor=anchor.replace(/[!"#$%&'()*+,./:;<=>?@[\\\]^`{|}~]/g,'\\$&');
 	const target=$(`#${escapedAnchor}, [name="${anchor}"]`).first();
-	if (!target.length) return '';
+	if (!target.length) return null;
 
 	const parts: string[]=[];
 	let current=target;
 	const tagName=target.prop('tagName')?.toLowerCase();
+
+	// Start from the heading itself or its next sibling
 	if (tagName&&/^h[1-6]$/.test(tagName)) {
+		parts.push($.html(target));
 		current=target.next();
 	} else {
 		current=target.parent().next();
 	}
 
 	let count=0;
-	while (current.length&&count<10) {
+	while (current.length&&count<20) {
 		const currentTag=current.prop('tagName')?.toLowerCase();
+		// Stop at next heading
 		if (currentTag&&/^h[1-6]$/.test(currentTag)) break;
-		const text=current.text().trim();
-		if (text) parts.push(text);
+		parts.push($.html(current));
 		current=current.next();
 		count++;
 	}
 
-	return parts.join(' ').slice(0,800);
-}
+	if (parts.length===0) return null;
 
+	// Wrap in a container for proper HTML structure
+	return `<div class="section">${parts.join('')}</div>`;
+}
