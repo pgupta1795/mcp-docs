@@ -1,6 +1,7 @@
 
+import {logger} from '@/config/logger.js';
 import {pipeline} from "@xenova/transformers";
-import {env} from "../../config/env.js";
+import {env} from "../../../../config/env.js";
 
 let extractor: any=null;
 
@@ -19,14 +20,14 @@ export class EmbeddingService {
 	async initialize(): Promise<void> {
 		if (this.isInitialized) return;
 		try {
-			console.log(`Initializing embedding model: ${env.EMBEDDING_MODEL}...`);
+			logger.info(`Initializing embedding model: ${env.EMBEDDING_MODEL}...`);
 			extractor=await pipeline("feature-extraction",env.EMBEDDING_MODEL,{
 				quantized: true,
 			});
 			this.isInitialized=true;
-			console.log("Embedding model initialized successfully");
+			logger.info("Embedding model initialized successfully");
 		} catch (error) {
-			console.error("Failed to initialize embedding model",error);
+			logger.error("Failed to initialize embedding model"+error);
 			throw error;
 		}
 	}
@@ -51,7 +52,7 @@ export class EmbeddingService {
 					});
 					embeddings.push(new Float32Array(output.data));
 				} catch (error) {
-					console.error("Failed to embed text",error);
+					logger.error("Failed to embed text"+error);
 					embeddings.push(new Float32Array(384)); // Fallback zero vector
 				}
 			}

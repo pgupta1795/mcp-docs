@@ -1,5 +1,6 @@
+import {logger} from '@/config/logger.js';
 import {CheerioCrawler,Configuration} from 'crawlee';
-import {env,SeedUrl} from '../config/env.js';
+import {env,SeedUrl} from '../../../config/env.js';
 
 export type CrawledPage={
 	url: string;
@@ -103,9 +104,9 @@ export async function crawlSite(
 		maxRequestRetries: 2,
 	},crawlConfig);
 
-	console.log(`Starting crawl of ${seed.name} from ${seed.url}`);
+	logger.info(`Starting crawl of ${seed.name} from ${seed.url}`);
 	await crawler.run([seed.url]);
-	console.log(`Crawl complete: ${pagesProcessed} pages, ${errors} errors`);
+	logger.info(`Crawl complete: ${pagesProcessed} pages, ${errors} errors`);
 	return {pagesProcessed,errors};
 }
 

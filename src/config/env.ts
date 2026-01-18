@@ -35,9 +35,11 @@ const envSchema=z.object({
 		.enum(['development','production','test'])
 		.default('development'),
 	PORT: z.string().default('5004').transform(Number),
+	TRANSPORT: z.enum(['stdio','http']).default('http'),
 	LOG_LEVEL: z
-		.enum(['verbose','trace','debug','info','warn','error','fatal'])
+		.enum(['debug','info','warn','error'])
 		.default('info'),
+	LOG_PATH: z.string().optional(),
 	SEED_URLS: z.string().min(1,'SEED_URLS is required'),
 	CRAWL_MAX_DEPTH: z.string().default('5').transform(Number),
 	CRAWL_MAX_PAGES: z.string().default('1000').transform(Number),
@@ -53,8 +55,10 @@ const envSchema=z.object({
 
 const parsed=envSchema.parse({
 	NODE_ENV: process.env.NODE_ENV,
-	PORT: '5004',
+	PORT: process.env.PORT,
+	TRANSPORT: process.env.TRANSPORT,
 	LOG_LEVEL: process.env.LOG_LEVEL,
+	LOG_PATH: process.env.LOG_PATH,
 	SEED_URLS: process.env.SEED_URLS,
 	CRAWL_MAX_DEPTH: process.env.CRAWL_MAX_DEPTH,
 	CRAWL_MAX_PAGES: process.env.CRAWL_MAX_PAGES,

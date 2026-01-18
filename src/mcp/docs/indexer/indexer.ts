@@ -1,6 +1,7 @@
+import {logger} from '@/config/logger.js';
 import * as cheerio from 'cheerio';
 import crypto from 'crypto';
-import {SeedUrl,env} from '../config/env.js';
+import {SeedUrl,env} from '../../../config/env.js';
 import {db,initDb} from '../services/db.js';
 import {FTSIndexer} from '../services/fts/indexer.js';
 import {SemanticIndexer} from '../services/semantic/indexer.js';
@@ -25,7 +26,7 @@ function needsCrawl(seed: SeedUrl): boolean {
 
 export async function runIndexer(options: {force?: boolean}={}): Promise<IndexResult[]> {
 	const {force=false}=options;
-	console.log('Starting indexer...');
+	logger.info('Starting indexer...');
 	initDb();
 
 	// Initialize indexers
@@ -35,13 +36,13 @@ export async function runIndexer(options: {force?: boolean}={}): Promise<IndexRe
 	const results: IndexResult[]=[];
 
 	for (const seed of env.seedUrls) {
-		console.log(`\nProcessing ${seed.name}...`);
+		logger.info(`\nProcessing ${seed.name}...`);
 		const shouldIndex=force||needsCrawl(seed);
 
 		if (!shouldIndex) {
 			// Check existing count (using simple count from documents table)
 			const count=db.prepare("SELECT COUNT(*) as count FROM documents WHERE sourceName = ?").get(seed.name) as {count: number};
-			console.log(`Skipping ${seed.name} - already indexed (${count.count} pages)`);
+			logger.info(`Skipping ${seed.name} - already indexed (${count.count} pages)`);
 			results.push({
 				sourceName: seed.name,
 				status: 'skipped',
@@ -51,7 +52,7 @@ export async function runIndexer(options: {force?: boolean}={}): Promise<IndexRe
 		}
 
 		// Clear existing data for this source
-		console.log(`Re-indexing ${seed.name} - clearing old data`);
+		logger.info(`Re-indexing ${seed.name} - clearing old data`);
 		db.prepare("DELETE FROM documents WHERE sourceName = ?").run(seed.name);
 
 		try {
@@ -94,7 +95,7 @@ export async function runIndexer(options: {force?: boolean}={}): Promise<IndexRe
 				{maxPages: env.CRAWL_MAX_PAGES}
 			);
 
-			console.log(`Completed ${seed.name}: ${crawlResult.pagesProcessed} pages`);
+			logger.info(`Completed ${seed.name}: ${crawlResult.pagesProcessed} pages`);
 			results.push({
 				sourceName: seed.name,
 				status: 'crawled',
@@ -103,11 +104,11 @@ export async function runIndexer(options: {force?: boolean}={}): Promise<IndexRe
 			});
 		} catch (error) {
 			const message=error instanceof Error? error.message:String(error);
-			console.error(`Error indexing ${seed.name}: ${message}`);
+			logger.error(`Error indexing ${seed.name}: ${message}`);
 			results.push({sourceName: seed.name,status: 'error',message});
 		}
 	}
 
-	console.log(`\nIndexer complete.`);
+	logger.info(`\nIndexer complete.`);
 	return results;
 }

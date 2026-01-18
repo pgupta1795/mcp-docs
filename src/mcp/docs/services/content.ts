@@ -1,3 +1,4 @@
+import {logger} from '@/config/logger';
 import * as cheerio from "cheerio";
 import {LRUCache} from "lru-cache";
 import TurndownService from "turndown";
@@ -23,15 +24,15 @@ export class ContentService {
 	 * @param selector Optional CSS selector to extract a specific section
 	 */
 	async getDocContent(url: string,selector?: string): Promise<string> {
-		console.log(`[ContentService] Fetching: ${url}${selector? `, selector: ${selector}`:''}`);
+		logger.info(`[ContentService] Fetching: ${url}${selector? `, selector: ${selector}`:''}`);
 		const cacheKey=`${url}:${selector||"FULL"}`;
 
 		if (contentCache.has(cacheKey)) {
-			console.log(`[ContentService] Cache HIT: ${url}`);
+			logger.info(`[ContentService] Cache HIT: ${url}`);
 			return contentCache.get(cacheKey)!;
 		}
 
-		console.log(`[ContentService] Cache MISS: Fetching from URL...`);
+		logger.info(`[ContentService] Cache MISS: Fetching from URL...`);
 
 		try {
 			const response=await fetch(url);
@@ -40,7 +41,7 @@ export class ContentService {
 			}
 
 			const html=await response.text();
-			console.log(`[ContentService] Fetched ${html.length} bytes from ${url}`);
+			logger.info(`[ContentService] Fetched ${html.length} bytes from ${url}`);
 
 			const $=cheerio.load(html);
 
@@ -63,11 +64,11 @@ export class ContentService {
 			if (selector) {
 				const selected=$(selector);
 				if (selected.length>0) {
-					console.log(`[ContentService] Selector matched ${selected.length} elements`);
+					logger.info(`[ContentService] Selector matched ${selected.length} elements`);
 					const parent=selected.parent();
 					htmlToConvert=parent.length>0? $.html(parent):$.html(selected);
 				} else {
-					console.log(`[ContentService] Selector not found, falling back to main content`);
+					logger.info(`[ContentService] Selector not found, falling back to main content`);
 					htmlToConvert=this.getMainContent($);
 				}
 			} else {
@@ -75,13 +76,13 @@ export class ContentService {
 			}
 
 			const markdown=turndownService.turndown(htmlToConvert);
-			console.log(`[ContentService] Converted to ${markdown.length} chars of markdown`);
+			logger.info(`[ContentService] Converted to ${markdown.length} chars of markdown`);
 
 			contentCache.set(cacheKey,markdown);
 			return markdown;
 
 		} catch (error) {
-			console.error(`[ContentService] Error fetching ${url}:`,error);
+			logger.error(`[ContentService] Error fetching ${url}:`+error);
 			throw new Error(`Failed to fetch document: ${url}`);
 		}
 	}
@@ -91,7 +92,7 @@ export class ContentService {
 
 		for (const sel of potentials) {
 			if ($(sel).length>0) {
-				console.log(`[ContentService] Found main content using: ${sel}`);
+				logger.info(`[ContentService] Found main content using: ${sel}`);
 				return $.html($(sel));
 			}
 		}

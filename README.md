@@ -2,189 +2,100 @@
 
 MCP server for TVC/TIF documentation search with automatic web indexing.
 
-## Features
-
-- **Automatic Documentation Indexing**: Crawls documentation sites via navigation links (sidebar/navbar)
-- **Full-Text Search**: Uses SQLite FTS5 for fast keyword search with BM25 ranking
-- **Smart Content Extraction**: Converts HTML to markdown and splits into semantic sections
-- **LRU Caching**: Caches parsed content for fast repeated access
-- **Per-Source Configuration**: Each documentation source has its own navigation mode and recrawl settings
-
-## Available Documentation Sources
-
-| Source | URL | Recrawl |
-|--------|-----|---------|
-| TVC Classic 2025.4.0 | [Link](https://products.technia.com/app/docs/tvc-documentation-2025.4.0/tvc/install/index.html) | Never |
-| TVC Helium 2025.4.0 | [Link](https://products.technia.com/app/docs/tvc-helium-documentation-2025.4.0/index.html) | Never |
-| TIF Classic 2025.4.0 | [Link](https://products.technia.com/app/docs/tif-documentation-2025.4.0/tif-classic/2025.4.0/main/index.html) | Never |
-| TIF Cloud | [Link](https://forseven.tifdemo.technia.cloud/docs/tif-cloud/Current/main/index.html) | Daily |
-
-## Installation
+## Quick Start
 
 ```bash
-# Install dependencies
 npm install
-
-# Build the project
 npm run build
-```
-
-## Configuration
-
-Copy `env.example` to `.env` and configure:
-
-```env
-# Maximum pages to crawl per seed URL
-CRAWL_MAX_PAGES=1000
-
-# Whether to start indexing on server startup
-INIT_ON_START=true
-
-# Path to SQLite database file
-DB_PATH=./data/tvc-docs.db
-
-# LRU cache size (number of parsed pages)
-CACHE_SIZE=100
-
-# Server port
-PORT=3000
 ```
 
 ## Running the Server
 
-### Development
+### STDIO Mode
 
 ```bash
-npm run dev
+TRANSPORT=stdio npm run start
+# Or for development:
+npm run dev:stdio
 ```
 
-### Production
+### HTTP Mode
 
 ```bash
-npm run build
-npm run start
+TRANSPORT=http npm run start
+# Or for development:
+npm run dev:http
 ```
 
-## MCP Tools
+HTTP endpoint: `http://localhost:5004/docs/mcp`
 
-### `query_knowledge`
+---
 
-Search the documentation index and get relevant content with URL references.
+## MCP Client Configuration
 
-**Parameters:**
-- `query` (required): Search query - use specific terms
-- `source` (optional): Limit to specific source (e.g., "TVC Classic 2025.4.0")
-- `limit` (optional): Maximum results (default: 5)
+### STDIO Mode
 
-**Example:**
 ```json
 {
-  "query": "installation requirements",
-  "source": "TVC Classic 2025.4.0",
-  "limit": 3
-}
-```
-
-**Response:**
-```json
-{
-  "query": "installation requirements",
-  "resultsCount": 3,
-  "results": [
-    {
-      "url": "https://example.com/docs/install",
-      "title": "Installation Guide",
-      "source": "TVC Classic 2025.4.0",
-      "content": "## System Requirements\n\nTVC requires...",
-      "relevantSections": [
-        {
-          "heading": "Installation > System Requirements",
-          "anchor": "https://example.com/docs/install#system-requirements"
-        }
-      ]
+  "mcpServers": {
+    "tvc-docs": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "cwd": "C:/path/to/mcp-tvc-docs",
+      "env": {
+        "TRANSPORT": "stdio",
+        "SEED_URLS": "TVC Classic|https://products.technia.com/app/docs/tvc-documentation-2025.4.0/tvc/install/index.html|sidebar|0"
+      }
     }
-  ]
-}
-```
-
-### `get_index_status`
-
-Get current status of the documentation index.
-
-**Response:**
-```json
-{
-  "ready": true,
-  "totalPages": 1234,
-  "sources": [
-    {
-      "name": "TVC Classic 2025.4.0",
-      "pageCount": 456,
-      "lastCrawled": "2025-01-09T12:00:00Z",
-      "needsRecrawl": false
-    }
-  ],
-  "cache": {
-    "size": 50,
-    "maxSize": 100
   }
 }
 ```
 
-## MCP Prompts
+### HTTP Mode
 
-### `search-docs`
-
-Helps construct effective documentation searches.
-
-**Args:**
-- `topic`: The topic you want to search for
-
-## Architecture
-
-```
-src/
-├─ index.ts              # MCP server entry point
-├─ config/
-│  └─ env.ts             # Configuration with per-URL settings
-├─ init/
-│  ├─ bootstrap.ts       # Startup initialization
-│  └─ discoverLinks.ts   # Navigation link discovery
-├─ crawler/
-│  ├─ crawl.ts           # Crawlee-based web crawler
-│  └─ normalize.ts       # URL normalization
-├─ db/
-│  ├─ index.ts           # SQLite connection
-│  ├─ schema.sql         # Database schema with FTS5
-│  └─ search.ts          # Full-text search queries
-├─ cache/
-│  ├─ pageCache.ts       # LRU cache
-│  └─ pageLoader.ts      # Cache-aware loading
-└─ extract/
-   └─ runtimeExtract.ts  # HTML to markdown extraction
+```json
+{
+  "mcpServers": {
+    "tvc-docs": {
+      "type": "http",
+      "url": "http://localhost:5004/docs/mcp"
+    }
+  }
+}
 ```
 
-## How It Works
+---
 
-1. **Initialization**: On startup, the server crawls configured seed URLs
-2. **Navigation Discovery**: Follows sidebar/navbar links to find all documentation pages
-3. **Content Storage**: Stores raw HTML in SQLite with FTS5 indexing
-4. **Query Time**: Searches FTS index, loads pages from cache, extracts relevant sections
-5. **Response**: Returns content with URL references for citations
+## Environment Variables
 
-## Adding Custom Documentation Sources
+| Variable            | Default                   | Description                                        |
+| ------------------- | ------------------------- | -------------------------------------------------- |
+| `TRANSPORT`         | `http`                    | Transport mode: `stdio` or `http`                  |
+| `PORT`              | `5004`                    | HTTP server port                                   |
+| `SEED_URLS`         | _required_                | Documentation sources (see format below)           |
+| `DB_PATH`           | `./data/tvc-docs.db`      | SQLite database path                               |
+| `INIT_ON_START`     | `true`                    | Auto-index on startup                              |
+| `CRAWL_MAX_PAGES`   | `1000`                    | Max pages per source                               |
+| `CRAWL_MAX_DEPTH`   | `5`                       | Max crawl depth                                    |
+| `CACHE_SIZE`        | `100`                     | LRU cache size                                     |
+| `LOG_LEVEL`         | `info`                    | Log level: `debug`, `info`, `warn`, `error`        |
+| `LOG_PATH`          | -                         | Optional log file path                             |
+| `SEARCH_MODE`       | `SEMANTIC_ONLY`           | Search mode: `FTS_ONLY`, `SEMANTIC_ONLY`, `HYBRID` |
+| `EMBEDDING_MODEL`   | `Xenova/all-MiniLM-L6-v2` | Embedding model for semantic search                |
+| `SEMANTIC_TOP_K`    | `20`                      | Top K results for semantic search                  |
+| `HYBRID_FTS_WEIGHT` | `0.4`                     | FTS weight in hybrid mode (0-1)                    |
 
-Modify `src/config/env.ts` or set `SEED_URLS` environment variable:
+### SEED_URLS Format
 
-```env
-SEED_URLS=My Docs|https://example.com/docs|sidebar|0,Other Docs|https://other.com/docs|auto|24
 ```
-
-Format: `name|url|navigationMode|recrawlIntervalHours`
+name|url|navigationMode|recrawlIntervalHours
+```
 
 - **navigationMode**: `sidebar`, `navbar`, or `auto`
-- **recrawlIntervalHours**: `0` = never recrawl, `24` = daily, etc.
+- **recrawlIntervalHours**: `0` = never, `24` = daily
 
-## License
+Example:
 
-MIT
+```env
+SEED_URLS=TVC Classic|https://products.technia.com/app/docs/tvc-documentation-2025.4.0/tvc/install/index.html|sidebar|0,TIF Cloud|https://forseven.tifdemo.technia.cloud/docs/tif-cloud/Current/main/index.html|auto|24
+```

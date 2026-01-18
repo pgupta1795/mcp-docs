@@ -1,3 +1,4 @@
+import {logger} from '@/config/logger.js';
 import {db} from "../db.js";
 import {getEmbeddingService} from "./embedding.js";
 
@@ -20,20 +21,11 @@ interface DocumentMeta {
 	url: string;
 }
 
-/**
- * Semantic Search Service
- * Performs vector similarity search using sqlite-vec vec0 MATCH queries
- */
 export class SemanticSearchService {
 	private embeddingService=getEmbeddingService();
 
-	/**
-	 * Search using semantic similarity via vec0 KNN
-	 * @param query Search query
-	 * @param limit Maximum results
-	 */
 	async search(query: string,limit: number=10): Promise<SemanticSearchResult[]> {
-		console.log(`[Semantic] Searching for: ${query}, limit: ${limit}`);
+		logger.info(`[Semantic] Searching for: ${query}, limit: ${limit}`);
 
 		try {
 			const queryEmbedding=await this.embeddingService.generateEmbeddings([query]);
@@ -50,7 +42,7 @@ export class SemanticSearchService {
                     AND k = ?
             `).all(vec,limit*3) as KnnResult[]; // Get more for dedup
 
-			console.log(`[Semantic] KNN returned ${knnResults.length} chunks`);
+			logger.info(`[Semantic] KNN returned ${knnResults.length} chunks`);
 
 			if (knnResults.length===0) {
 				return [];
@@ -87,11 +79,11 @@ export class SemanticSearchService {
 				if (topResults.length>=limit) break;
 			}
 
-			console.log(`[Semantic] Returning ${topResults.length} results`);
+			logger.info(`[Semantic] Returning ${topResults.length} results`);
 			return topResults;
 
 		} catch (error) {
-			console.error('[Semantic] Search failed:',error);
+			logger.error('[Semantic] Search failed:'+error);
 			return [];
 		}
 	}

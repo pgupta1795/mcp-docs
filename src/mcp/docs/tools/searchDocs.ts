@@ -1,3 +1,4 @@
+import {env} from '@/config/env.js';
 import {z} from "zod";
 import {getSearchOrchestrator} from "../services/search-orchestrator.js";
 
@@ -5,12 +6,19 @@ const searchOrchestrator=getSearchOrchestrator();
 
 export const searchDocsTool={
 	name: "search_docs",
-	description: "Search TVC/TIF documentation using semantic, FTS, or hybrid search based on configuration.",
-	schema: z.object({
-		query: z.string().describe("Search keywords or phrase"),
-		limit: z.number().optional().default(10).describe("Maximum number of results (default 10)")
-	}),
-	handler: async ({query,limit=10}: {query: string; limit?: number}) => {
+	definition: {
+		title: "Search Documentation",
+		description: `
+			Search documentation using semantic, FTS, or hybrid search based on configuration.	
+			Read the ${env.seedUrls.map((url) => url.url).join(", ")} for more information.
+		`,
+		inputSchema: z.object({
+			query: z.string().describe("Search keywords or phrase"),
+			limit: z.number().default(10).describe("Maximum number of results (default 10)")
+		})
+	},
+	handler: async (args: any) => {
+		const {query,limit=10}=args;
 		const results=await searchOrchestrator.search(query,limit);
 
 		if (results.length===0) {

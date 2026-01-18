@@ -1,9 +1,10 @@
 
+import {logger} from '@/config/logger.js';
 import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
 import * as sqliteVec from "sqlite-vec";
-import {env} from "../config/env.js";
+import {env} from "../../../config/env.js";
 
 const DB_PATH=env.DB_PATH;
 const DB_DIR=path.dirname(DB_PATH);
@@ -12,7 +13,7 @@ if (!fs.existsSync(DB_DIR)) {
     fs.mkdirSync(DB_DIR,{recursive: true});
 }
 
-console.log(`Using database at: ${DB_PATH}`);
+logger.info(`Using database at: ${DB_PATH}`);
 
 export const db: Database.Database=new Database(DB_PATH);
 
@@ -20,7 +21,7 @@ export const db: Database.Database=new Database(DB_PATH);
 sqliteVec.load(db);
 
 export function initDb() {
-    console.log("=== Initializing Database Tables ===");
+    logger.info("=== Initializing Database Tables ===");
 
     // 1. Documents table (metadata only - content fetched at runtime)
     db.exec(`
@@ -60,5 +61,5 @@ export function initDb() {
         `);
     }
 
-    console.log("=== Database initialization complete ===");
+    logger.info("=== Database initialization complete ===");
 }

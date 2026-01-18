@@ -1,4 +1,5 @@
 
+import {logger} from '@/config/logger.js';
 import * as cheerio from "cheerio";
 import crypto from "crypto";
 import {db} from "../db.js";
@@ -43,7 +44,7 @@ export class SemanticIndexer {
 			insertChunk.run(docId,embeddings[i],chunks[i].chunkText);
 		}
 
-		console.log(`Indexed ${chunks.length} semantic chunks for ${url}`);
+		logger.info(`Indexed ${chunks.length} semantic chunks for ${url}`);
 	}
 
 	private parseAndChunk(docId: string,html: string,pageTitle: string): ParsedChunk[] {

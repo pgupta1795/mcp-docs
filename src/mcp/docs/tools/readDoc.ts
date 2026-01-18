@@ -5,12 +5,17 @@ const contentService=new ContentService();
 
 export const readDocTool={
 	name: "read_doc",
-	description: "Read the content of a specific documentation page. Fetches the URL and returns Markdown.",
-	schema: z.object({
-		url: z.string().describe("URL of the page to read (from search results)"),
-		selector: z.string().optional().describe("Optional CSS selector to extract a specific section (e.g. '#section-id')")
-	}),
-	handler: async ({url,selector}: {url: string; selector?: string}) => {
+	definition: {
+		title: "Read Documentation",
+		description: "Read the content of a specific documentation page. Fetches the URL and returns Markdown.",
+		inputSchema: z.object({
+			url: z.string().describe("URL of the page to read (from search results)"),
+			selector: z.string().optional().describe("Optional CSS selector to extract a specific section (e.g. '#section-id')")
+		})
+	},
+	handler: async (args: any) => {
+		const {url,selector}=args;
+
 		try {
 			const markdown=await contentService.getDocContent(url,selector);
 

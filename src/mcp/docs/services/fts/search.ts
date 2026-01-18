@@ -1,3 +1,4 @@
+import {logger} from '@/config/logger.js';
 import {db} from "../db.js";
 
 interface SearchResult {
@@ -8,13 +9,9 @@ interface SearchResult {
 }
 
 export class FTSSearchService {
-	/**
-	 * Search the documentation using FTS5.
-	 * @param query The search query string
-	 * @param limit Max results
-	 */
+
 	search(query: string,limit: number=10): SearchResult[] {
-		console.log(`[FTS] Searching for: ${query}, limit: ${limit}`);
+		logger.info(`[FTS] Searching for: ${query}, limit: ${limit}`);
 
 		try {
 			const stmt=db.prepare(`
@@ -39,7 +36,7 @@ export class FTSSearchService {
 				limit
 			}) as any[];
 
-			console.log(`[FTS] Found ${results.length} results`);
+			logger.info(`[FTS] Found ${results.length} results`);
 
 			return results.map(r => ({
 				title: r.title,
@@ -49,7 +46,7 @@ export class FTSSearchService {
 			}));
 
 		} catch (error) {
-			console.error('[FTS] Search failed:',error);
+			logger.error('[FTS] Search failed:'+error);
 			return [];
 		}
 	}

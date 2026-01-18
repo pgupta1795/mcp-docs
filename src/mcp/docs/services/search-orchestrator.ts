@@ -1,4 +1,5 @@
-import {env} from "../config/env.js";
+import {logger} from '@/config/logger.js';
+import {env} from "../../../config/env.js";
 import {FTSSearchService} from "./fts/search.js";
 import {SemanticSearchService} from "./semantic/search.js";
 
@@ -22,7 +23,7 @@ export class SearchOrchestrator {
 
 	async search(query: string,limit: number=10): Promise<UnifiedSearchResult[]> {
 		const mode=env.SEARCH_MODE;
-		console.log(`[Orchestrator] Search mode: ${mode}, query: ${query}, limit: ${limit}`);
+		logger.info(`[Orchestrator] Search mode: ${mode}, query: ${query}, limit: ${limit}`);
 
 		switch (mode) {
 			case 'FTS_ONLY':
@@ -35,7 +36,7 @@ export class SearchOrchestrator {
 				return this.hybridSearch(query,limit);
 
 			default:
-				console.warn(`Unknown search mode: ${mode}, falling back to FTS`);
+				logger.warn(`Unknown search mode: ${mode}, falling back to FTS`);
 				return this.ftsOnlySearch(query,limit);
 		}
 	}
@@ -71,7 +72,7 @@ export class SearchOrchestrator {
 	 * Combines FTS and semantic results with configurable weights
 	 */
 	private async hybridSearch(query: string,limit: number): Promise<UnifiedSearchResult[]> {
-		console.log(`[Orchestrator] Executing hybrid search...`);
+		logger.info(`[Orchestrator] Executing hybrid search...`);
 
 		// Get more results from each source for better fusion
 		const fetchLimit=Math.max(limit*3,30);
@@ -82,7 +83,7 @@ export class SearchOrchestrator {
 			this.semanticService.search(query,fetchLimit)
 		]);
 
-		console.log(`[Orchestrator] FTS: ${ftsResults.length}, Semantic: ${semanticResults.length}`);
+		logger.info(`[Orchestrator] FTS: ${ftsResults.length}, Semantic: ${semanticResults.length}`);
 
 		// Build document map for RRF
 		const docScores=new Map<string,{
@@ -159,7 +160,7 @@ export class SearchOrchestrator {
 		// Sort by RRF score (descending)
 		scoredDocs.sort((a,b) => b.rrfScore-a.rrfScore);
 		const finalResults=scoredDocs.slice(0,limit).map(({rrfScore,...rest}) => rest);
-		console.log(`[Orchestrator] Hybrid returning ${finalResults.length} results (ftsWeight: ${ftsWeight})`);
+		logger.info(`[Orchestrator] Hybrid returning ${finalResults.length} results (ftsWeight: ${ftsWeight})`);
 		return finalResults;
 	}
 }
