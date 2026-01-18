@@ -1,561 +1,190 @@
-# MCP Starter Server
+# MCP TVC Docs Server
 
-[![Deploy to mcp-use](https://cdn.mcp-use.com/deploy.svg)](https://mcp-use.com/deploy/start?repository-url=https%3A%2F%2Fgithub.com%2Fmcp-use%2Fmcp-use%2Ftree%2Fmain%2Flibraries%2Ftypescript%2Fpackages%2Fcreate-mcp-use-app%2Fsrc%2Ftemplates%2Fstarter&branch=main&project-name=starter-template&build-command=npm+install&start-command=npm+run+build+%26%26+npm+run+start&port=3000&runtime=node&base-image=node%3A20)
-
-A comprehensive MCP server template with examples of tools, resources, prompts, and all UIResource types.
-
-> 📚 **[View Full Documentation](https://docs.mcp-use.com/typescript/getting-started/quickstart)** - Complete guides, API references, and tutorials
+MCP server for TVC/TIF documentation search with automatic web indexing.
 
 ## Features
 
-- **🛠️ Tools**: Regular MCP tools and API integrations
-- **📦 Resources**: Static and dynamic resources
-- **📝 Prompts**: Reusable prompt templates
-- **🎨 UIResources**: Three types of interactive widgets
-  - External URL (React iframe widgets)
-  - Remote DOM (MCP-UI components)
-  - Apps SDK (OpenAI ChatGPT compatible)
-- **🔥 Hot Reload**: Development server with auto-reload
-- **🔍 Inspector UI**: Built-in testing interface
-- **✅ TypeScript**: Full type safety
+- **Automatic Documentation Indexing**: Crawls documentation sites via navigation links (sidebar/navbar)
+- **Full-Text Search**: Uses SQLite FTS5 for fast keyword search with BM25 ranking
+- **Smart Content Extraction**: Converts HTML to markdown and splits into semantic sections
+- **LRU Caching**: Caches parsed content for fast repeated access
+- **Per-Source Configuration**: Each documentation source has its own navigation mode and recrawl settings
 
-## What's Included
+## Available Documentation Sources
 
-This starter template demonstrates all major MCP features:
+| Source | URL | Recrawl |
+|--------|-----|---------|
+| TVC Classic 2025.4.0 | [Link](https://products.technia.com/app/docs/tvc-documentation-2025.4.0/tvc/install/index.html) | Never |
+| TVC Helium 2025.4.0 | [Link](https://products.technia.com/app/docs/tvc-helium-documentation-2025.4.0/index.html) | Never |
+| TIF Classic 2025.4.0 | [Link](https://products.technia.com/app/docs/tif-documentation-2025.4.0/tif-classic/2025.4.0/main/index.html) | Never |
+| TIF Cloud | [Link](https://forseven.tifdemo.technia.cloud/docs/tif-cloud/Current/main/index.html) | Daily |
 
-### 1. Traditional Tools
-
-```typescript
-import { text } from 'mcp-use/server';
-
-server.tool({
-  name: 'greet',
-  description: 'Greet someone by name',
-  schema: z.object({name:z.string()}),
-}, async ({ name }) => {
-    return text(`Hello, ${name}!`)
-  },
-)
-```
-
-### 2. Resources
-
-```typescript
-server.resource({
-  name: 'config',
-  uri: 'config://settings',
-  mimeType: 'application/json',
-  readCallback: async () => ({
-    /* ... */
-  }),
-})
-```
-
-### 3. Prompts
-
-```typescript
-server.prompt({
-  name: 'review-code',
-  description: 'Review code for best practices',
-  args: [{ name: 'code', type: 'string', required: true }],
-  cb: async ({ code }) => {
-    /* ... */
-  },
-})
-```
-
-### 4. UIResources (3 Types)
-
-#### A. External URL (Iframe Widget)
-
-React components served from your filesystem:
-
-```typescript
-server.uiResource({
-  type: 'externalUrl',
-  name: 'kanban-board',
-  widget: 'kanban-board',
-  title: 'Kanban Board',
-  props: {
-    /* ... */
-  },
-})
-```
-
-#### B. Remote DOM (MCP-UI Components)
-
-Lightweight widgets using MCP-UI React components:
-
-```typescript
-server.uiResource({
-  type: 'remoteDom',
-  name: 'quick-poll',
-  script: `/* Remote DOM script */`,
-  framework: 'react',
-  props: {
-    /* ... */
-  },
-})
-```
-
-#### C. Apps SDK (ChatGPT Compatible)
-
-OpenAI Apps SDK widgets for ChatGPT integration:
-
-```typescript
-server.uiResource({
-  type: 'appsSdk',
-  name: 'pizzaz-map-apps-sdk',
-  htmlTemplate: `<div id="pizzaz-root"></div>`,
-  appsSdkMetadata: {
-    /* OpenAI metadata */
-  },
-})
-```
-
-## Getting Started
-
-### Installation
+## Installation
 
 ```bash
 # Install dependencies
 npm install
+
+# Build the project
+npm run build
 ```
+
+## Configuration
+
+Copy `env.example` to `.env` and configure:
+
+```env
+# Maximum pages to crawl per seed URL
+CRAWL_MAX_PAGES=1000
+
+# Whether to start indexing on server startup
+INIT_ON_START=true
+
+# Path to SQLite database file
+DB_PATH=./data/tvc-docs.db
+
+# LRU cache size (number of parsed pages)
+CACHE_SIZE=100
+
+# Server port
+PORT=3000
+```
+
+## Running the Server
 
 ### Development
 
 ```bash
-# Start development server with hot reloading
 npm run dev
 ```
-
-This starts:
-
-- MCP server on port 3000
-- Widget serving at `/mcp-use/widgets/*`
-- Inspector UI at `/inspector`
 
 ### Production
 
 ```bash
-# Build the server and widgets
 npm run build
-
-# Run the built server
-npm start
+npm run start
 ```
 
-## Project Structure
+## MCP Tools
 
-```
-starter/
-├── src/
-│   ├── server.ts          # Main server configuration
-│   └── remoteDom/         # Remote DOM scripts
-│       └── index.ts       # Quick poll script
-├── resources/             # React widget components (root level!)
-│   └── kanban-board.tsx
-├── index.ts               # Entry point
-├── package.json
-├── tsconfig.json
-└── README.md
-```
+### `query_knowledge`
 
-## Available Tools
+Search the documentation index and get relevant content with URL references.
 
-### `greet`
+**Parameters:**
+- `query` (required): Search query - use specific terms
+- `source` (optional): Limit to specific source (e.g., "TVC Classic 2025.4.0")
+- `limit` (optional): Maximum results (default: 5)
 
-Simple greeting tool demonstrating basic tool structure.
-
-```typescript
-await client.callTool('greet', { name: 'Alice' })
-// Returns: "Hello, Alice! Welcome to MCP."
-```
-
-### `fetch-weather`
-
-Demonstrates async operations and external API calls.
-
-```typescript
-await client.callTool('fetch-weather', { city: 'London' })
-// Returns: Weather information from wttr.in
-```
-
-### `ui_kanban-board`
-
-Interactive Kanban board widget (External URL).
-
-```typescript
-await client.callTool('ui_kanban-board', {
-  initialTasks: [{ id: '1', title: 'Task 1' /* ... */ }],
-  theme: 'dark',
-})
-```
-
-### `ui_quick-poll`
-
-Quick polling widget (Remote DOM).
-
-```typescript
-await client.callTool('ui_quick-poll', {
-  question: 'Favorite framework?',
-  options: ['React', 'Vue', 'Svelte'],
-})
-```
-
-### `ui_pizzaz-map-apps-sdk`
-
-Pizza location map (Apps SDK).
-
-```typescript
-await client.callTool('ui_pizzaz-map-apps-sdk', {
-  pizzaTopping: 'pepperoni',
-})
-```
-
-## Available Resources
-
-### `config://settings`
-
-Server configuration resource.
-
-```typescript
-await client.readResource('config://settings')
-```
-
-### `ui://widget/kanban-board`
-
-Static Kanban board widget with defaults.
-
-```typescript
-await client.readResource('ui://widget/kanban-board')
-```
-
-### `ui://widget/quick-poll`
-
-Static quick poll widget with defaults.
-
-```typescript
-await client.readResource('ui://widget/quick-poll')
-```
-
-### `ui://widget/pizzaz-map-apps-sdk`
-
-Static pizza map widget.
-
-```typescript
-await client.readResource('ui://widget/pizzaz-map-apps-sdk')
-```
-
-## Available Prompts
-
-### `review-code`
-
-Code review prompt template.
-
-```typescript
-await client.getPrompt('review-code', { code: 'const x = 1;' })
-```
-
-## Customization Guide
-
-### Adding New Tools
-
-1. Add to `src/server.ts`:
-
-```typescript
-server.tool({
-  name: 'my-tool',
-  description: 'My custom tool',
-  schema: z.object({
-    param: z.string(),
-  })
-}, async ({ param }) => {
-    // Your logic here
-    return text(param)
-  },
-)
-```
-
-### Adding New React Widgets
-
-1. Create widget in `resources/my-widget.tsx` (at root level):
-
-```tsx
-import React from 'react'
-import { createRoot } from 'react-dom/client'
-
-const MyWidget: React.FC = () => {
-  return <div>My Widget</div>
-}
-
-const container = document.getElementById('widget-root')
-if (container) {
-  createRoot(container).render(<MyWidget />)
+**Example:**
+```json
+{
+  "query": "installation requirements",
+  "source": "TVC Classic 2025.4.0",
+  "limit": 3
 }
 ```
 
-2. Register in `src/server.ts`:
-
-```typescript
-server.uiResource({
-  type: 'externalUrl',
-  name: 'my-widget',
-  widget: 'my-widget',
-  title: 'My Widget',
-  description: 'My custom widget',
-})
-```
-
-### Adding Remote DOM Widgets
-
-1. Create script in `src/remoteDom/my-script.ts`:
-
-```typescript
-export const myScript = `
-  const container = document.createElement('ui-stack');
-  container.setAttribute('direction', 'column');
-
-  const text = document.createElement('ui-text');
-  text.textContent = 'Hello from Remote DOM!';
-  container.appendChild(text);
-
-  root.appendChild(container);
-`
-```
-
-2. Register in `src/server.ts`:
-
-```typescript
-import { myScript } from './remoteDom/my-script'
-
-server.uiResource({
-  type: 'remoteDom',
-  name: 'my-remote-widget',
-  script: myScript,
-  framework: 'react',
-  encoding: 'text',
-})
-```
-
-### Adding Resources
-
-```typescript
-server.resource({
-  name: 'my-resource',
-  uri: 'custom://my-data',
-  mimeType: 'application/json',
-  description: 'My custom resource',
-  readCallback: async () => ({
-    contents: [
-      {
-        uri: 'custom://my-data',
-        mimeType: 'application/json',
-        text: JSON.stringify({ data: 'value' }),
-      },
-    ],
-  }),
-})
-```
-
-### Adding Prompts
-
-```typescript
-server.prompt({
-  name: 'my-prompt',
-  description: 'My custom prompt',
-  args: [{ name: 'input', type: 'string', required: true }],
-  cb: async ({ input }) => ({
-    content: [
-      {
-        type: 'text',
-        text: `Process this input: ${input}`,
-      },
-    ],
-  }),
-})
-```
-
-## Testing Your Server
-
-### Using the Inspector UI
-
-1. Start the server: `npm run dev`
-2. Open: `http://localhost:3000/inspector`
-3. Test tools, resources, and prompts interactively
-
-### Direct Browser Access
-
-For External URL widgets:
-
-```
-http://localhost:3000/mcp-use/widgets/kanban-board
-```
-
-### Via MCP Client
-
-```typescript
-import { createMCPClient } from 'mcp-use/client'
-
-const client = createMCPClient({
-  serverUrl: 'http://localhost:3000/mcp',
-})
-
-await client.connect()
-
-// Test tools
-const result = await client.callTool('greet', { name: 'World' })
-
-// Test resources
-const config = await client.readResource('config://settings')
-
-// Test prompts
-const prompt = await client.getPrompt('review-code', { code: '...' })
-```
-
-## UIResource Types Comparison
-
-| Type             | Use Case            | Complexity | Features                          |
-| ---------------- | ------------------- | ---------- | --------------------------------- |
-| **External URL** | Complex React apps  | High       | Full React, npm packages, routing |
-| **Remote DOM**   | Lightweight widgets | Low        | MCP-UI components only            |
-| **Apps SDK**     | ChatGPT integration | Medium     | OpenAI ecosystem compatibility    |
-
-### When to Use Each
-
-- **External URL**: Complex interactive UIs (dashboards, forms, games)
-- **Remote DOM**: Simple widgets (buttons, cards, polls)
-- **Apps SDK**: ChatGPT-specific integrations
-
-## Environment Variables
-
-```bash
-PORT=3000  # Server port (default: 3000)
-```
-
-## Build Output
-
-After running `npm run build`:
-
-```
-dist/
-├── index.js              # Entry point
-├── src/
-│   ├── server.js         # Compiled server
-│   └── remoteDom/
-│       └── index.js
-└── resources/
-    └── mcp-use/
-        └── widgets/
-            └── kanban-board/
-                └── index.html
-```
-
-## Troubleshooting
-
-### Widget Not Loading
-
-- Ensure `tsconfig.json` has `"jsx": "react-jsx"`
-- Check `src/resources/` contains your widget file
-- Verify widget is built in `dist/resources/mcp-use/widgets/`
-- Check browser console for errors
-
-### Props Not Passed to Widget
-
-- Widgets receive props as URL query parameters
-- Parse them in `useEffect` with `URLSearchParams`
-- Complex objects are JSON-stringified
-
-### Build Errors
-
-```bash
-# Clean build
-rm -rf dist node_modules
-npm install
-npm run build
-```
-
-### Port Already in Use
-
-```bash
-# Change port
-PORT=3001 npm run dev
-```
-
-## Examples
-
-### Complete Weather Widget
-
-1. **Create widget** (`resources/weather.tsx`):
-
-```tsx
-import React, { useEffect, useState } from 'react'
-import { createRoot } from 'react-dom/client'
-
-const Weather: React.FC = () => {
-  const [city, setCity] = useState('London')
-  const [weather, setWeather] = useState(null)
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const cityParam = params.get('city')
-    if (cityParam) setCity(cityParam)
-  }, [])
-
-  useEffect(() => {
-    fetch(`https://wttr.in/${city}?format=j1`)
-      .then((r) => r.json())
-      .then(setWeather)
-  }, [city])
-
-  if (!weather) return <div>Loading...</div>
-
-  return (
-    <div style={{ padding: 20 }}>
-      <h1>Weather in {city}</h1>
-      <p>{weather.current_condition[0].temp_C}°C</p>
-    </div>
-  )
+**Response:**
+```json
+{
+  "query": "installation requirements",
+  "resultsCount": 3,
+  "results": [
+    {
+      "url": "https://example.com/docs/install",
+      "title": "Installation Guide",
+      "source": "TVC Classic 2025.4.0",
+      "content": "## System Requirements\n\nTVC requires...",
+      "relevantSections": [
+        {
+          "heading": "Installation > System Requirements",
+          "anchor": "https://example.com/docs/install#system-requirements"
+        }
+      ]
+    }
+  ]
 }
-
-const container = document.getElementById('widget-root')
-if (container) createRoot(container).render(<Weather />)
 ```
 
-2. **Register** (`src/server.ts`):
+### `get_index_status`
 
-```typescript
-server.uiResource({
-  type: 'externalUrl',
-  name: 'weather-widget',
-  widget: 'weather',
-  title: 'Weather Widget',
-  props: {
-    city: { type: 'string', default: 'London' },
-  },
-})
+Get current status of the documentation index.
+
+**Response:**
+```json
+{
+  "ready": true,
+  "totalPages": 1234,
+  "sources": [
+    {
+      "name": "TVC Classic 2025.4.0",
+      "pageCount": 456,
+      "lastCrawled": "2025-01-09T12:00:00Z",
+      "needsRecrawl": false
+    }
+  ],
+  "cache": {
+    "size": 50,
+    "maxSize": 100
+  }
+}
 ```
 
-3. **Use**:
+## MCP Prompts
 
-```typescript
-await client.callTool('ui_weather-widget', { city: 'Paris' })
+### `search-docs`
+
+Helps construct effective documentation searches.
+
+**Args:**
+- `topic`: The topic you want to search for
+
+## Architecture
+
+```
+src/
+├─ index.ts              # MCP server entry point
+├─ config/
+│  └─ env.ts             # Configuration with per-URL settings
+├─ init/
+│  ├─ bootstrap.ts       # Startup initialization
+│  └─ discoverLinks.ts   # Navigation link discovery
+├─ crawler/
+│  ├─ crawl.ts           # Crawlee-based web crawler
+│  └─ normalize.ts       # URL normalization
+├─ db/
+│  ├─ index.ts           # SQLite connection
+│  ├─ schema.sql         # Database schema with FTS5
+│  └─ search.ts          # Full-text search queries
+├─ cache/
+│  ├─ pageCache.ts       # LRU cache
+│  └─ pageLoader.ts      # Cache-aware loading
+└─ extract/
+   └─ runtimeExtract.ts  # HTML to markdown extraction
 ```
 
-## Learn More
+## How It Works
 
-- [MCP Documentation](https://modelcontextprotocol.io)
-- [MCP-UI Documentation](https://github.com/idosal/mcp-ui)
-- [mcp-use Documentation](https://github.com/pyroprompt/mcp-use)
-- [React Documentation](https://react.dev/)
-- [OpenAI Apps SDK](https://platform.openai.com/docs/apps)
+1. **Initialization**: On startup, the server crawls configured seed URLs
+2. **Navigation Discovery**: Follows sidebar/navbar links to find all documentation pages
+3. **Content Storage**: Stores raw HTML in SQLite with FTS5 indexing
+4. **Query Time**: Searches FTS index, loads pages from cache, extracts relevant sections
+5. **Response**: Returns content with URL references for citations
+
+## Adding Custom Documentation Sources
+
+Modify `src/config/env.ts` or set `SEED_URLS` environment variable:
+
+```env
+SEED_URLS=My Docs|https://example.com/docs|sidebar|0,Other Docs|https://other.com/docs|auto|24
+```
+
+Format: `name|url|navigationMode|recrawlIntervalHours`
+
+- **navigationMode**: `sidebar`, `navbar`, or `auto`
+- **recrawlIntervalHours**: `0` = never recrawl, `24` = daily, etc.
 
 ## License
 
 MIT
-
----
-
-> 📚 **[View Full Documentation](https://docs.mcp-use.com/typescript/getting-started/quickstart)** - For more guides and advanced features
-
-Happy building! 🚀
