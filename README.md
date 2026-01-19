@@ -26,7 +26,9 @@ SEED_URLS="Docs|https://example.com/docs|sidebar|0" TRANSPORT=http npx @pgupta17
       "args": ["-y", "@pgupta1795/mcp-docs"],
       "env": {
         "TRANSPORT": "stdio",
-        "SEED_URLS": "Docs|https://example.com/docs|sidebar|0"
+        "SEED_URLS": "TVC Classic 2025.4.0|https://products.technia.com/app/docs/tvc-documentation-2025.4.0/tvc/install/index.html|navbar|0,TVC Helium 2025.4.0|https://products.technia.com/app/docs/tvc-helium-documentation-2025.4.0/index.html|navbar|0,TIF Classic 2025.4.0|https://products.technia.com/app/docs/tif-documentation-2025.4.0/tif-classic/2025.4.0/main/index.html|sidebar|0,TIF Cloud|https://forseven.tif.technia.cloud/docs/tif-cloud/Current/main/index.html|sidebar|0",
+        "SEARCH_MODE": "SEMANTIC_ONLY",
+        "DB_PATH": "C:/GBS/Search_Tool/mcp-docs/data/mcp-docs.db"
       }
     }
   }
