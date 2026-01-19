@@ -1,7 +1,7 @@
 import {config} from 'dotenv';
 import {z} from 'zod';
 
-config();
+config({quiet: true});
 
 export type SeedUrl={
 	name: string;
