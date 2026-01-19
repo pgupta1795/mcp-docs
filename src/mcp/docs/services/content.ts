@@ -1,7 +1,7 @@
-import {logger} from '@/config/logger';
 import * as cheerio from "cheerio";
 import {LRUCache} from "lru-cache";
 import TurndownService from "turndown";
+import {logger} from '../../../config/logger.js';
 
 const contentCache=new LRUCache<string,string>({
 	max: 100,

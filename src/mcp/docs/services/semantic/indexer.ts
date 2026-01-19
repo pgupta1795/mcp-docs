@@ -1,7 +1,7 @@
 
-import {logger} from '@/config/logger.js';
 import * as cheerio from "cheerio";
 import crypto from "crypto";
+import {logger} from '../../../../config/logger.js';
 import {db} from "../db.js";
 import {getEmbeddingService} from "./embedding.js";
 

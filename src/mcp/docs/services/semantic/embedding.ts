@@ -1,7 +1,7 @@
 
-import {logger} from '@/config/logger.js';
 import {pipeline} from "@xenova/transformers";
 import {env} from "../../../../config/env.js";
+import {logger} from '../../../../config/logger.js';
 
 let extractor: any=null;
 

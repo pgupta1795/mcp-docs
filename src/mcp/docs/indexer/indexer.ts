@@ -1,7 +1,7 @@
-import {logger} from '@/config/logger.js';
 import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 import {SeedUrl,env} from '../../../config/env.js';
+import {logger} from '../../../config/logger.js';
 import {db,initDb} from '../services/db.js';
 import {FTSIndexer} from '../services/fts/indexer.js';
 import {SemanticIndexer} from '../services/semantic/indexer.js';

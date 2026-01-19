@@ -1,10 +1,10 @@
 
-import {logger} from '@/config/logger.js';
 import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
 import * as sqliteVec from "sqlite-vec";
 import {env} from "../../../config/env.js";
+import {logger} from '../../../config/logger.js';
 
 const DB_PATH=env.DB_PATH;
 const DB_DIR=path.dirname(DB_PATH);

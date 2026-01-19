@@ -1,5 +1,5 @@
-import {env} from '@/config/env.js';
 import {z} from "zod";
+import {env} from '../../../config/env.js';
 import {getSearchOrchestrator} from "../services/search-orchestrator.js";
 
 const searchOrchestrator=getSearchOrchestrator();

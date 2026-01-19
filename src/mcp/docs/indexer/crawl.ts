@@ -1,6 +1,6 @@
-import {logger} from '@/config/logger.js';
 import {CheerioCrawler,Configuration} from 'crawlee';
 import {env,SeedUrl} from '../../../config/env.js';
+import {logger} from '../../../config/logger.js';
 
 export type CrawledPage={
 	url: string;

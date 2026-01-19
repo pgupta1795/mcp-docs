@@ -1,7 +1,7 @@
 {
   "name": "@pgupta1795/mcp-docs",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server for documentation search with web indexing from url",
   "author": "pgupta1795",
   "license": "MIT",
