@@ -1,21 +1,45 @@
 {
-  "name": "mcp-docs",
+  "name": "@pgupta1795/mcp-docs",
   "type": "module",
   "version": "1.0.0",
   "description": "MCP server for documentation search with web indexing from url",
-  "author": "",
+  "author": "pgupta1795",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pgupta1795/mcp-docs.git"
+  },
+  "homepage": "https://github.com/pgupta1795/mcp-docs#readme",
+  "bugs": {
+    "url": "https://github.com/pgupta1795/mcp-docs/issues"
+  },
   "keywords": [
     "mcp",
     "server",
     "documentation",
     "search",
-    "web-indexing"
+    "web-indexing",
+    "model-context-protocol",
+    "ai",
+    "llm"
   ],
   "main": "dist/index.js",
+  "bin": {
+    "mcp-docs": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "env.example",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "start": "cross-env NODE_OPTIONS=--max-old-space-size=4096 node dist/index.js",
+    "start:stdio": "cross-env TRANSPORT=stdio NODE_OPTIONS=--max-old-space-size=4096 node dist/index.js",
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsx watch src/index.ts",
     "dev:stdio": "cross-env NODE_OPTIONS=--max-old-space-size=4096 TRANSPORT=stdio tsx watch src/index.ts",
     "dev:http": "cross-env NODE_OPTIONS=--max-old-space-size=4096 TRANSPORT=http tsx watch src/index.ts"

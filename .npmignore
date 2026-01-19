@@ -1,0 +1,19 @@
+# Source files (dist is published)
+src/
+tsconfig.json
+
+# Development
+.env
+.env.*
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Data and logs
+data/
+logs/
+storage/
+
+# Lock files
+package-lock.json

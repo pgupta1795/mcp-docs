@@ -1,8 +1,41 @@
-# MCP TVC Docs Server
+# MCP Docs Server
 
-MCP server for TVC/TIF documentation search with automatic web indexing.
+MCP server for documentation search with automatic web indexing.
 
-## Quick Start
+[![npm version](https://badge.fury.io/js/%40pgupta1795%2Fmcp-docs.svg)](https://www.npmjs.com/package/@pgupta1795/mcp-docs)
+
+## Usage via npx (Recommended)
+
+Run the MCP server directly without installation:
+
+```bash
+# STDIO mode (for MCP client integration)
+SEED_URLS="Docs|https://example.com/docs|sidebar|0" TRANSPORT=stdio npx @pgupta1795/mcp-docs
+
+# HTTP mode
+SEED_URLS="Docs|https://example.com/docs|sidebar|0" TRANSPORT=http npx @pgupta1795/mcp-docs
+```
+
+### MCP Client Configuration (npx)
+
+```json
+{
+  "mcpServers": {
+    "docs": {
+      "command": "npx",
+      "args": ["-y", "@pgupta1795/mcp-docs"],
+      "env": {
+        "TRANSPORT": "stdio",
+        "SEED_URLS": "Docs|https://example.com/docs|sidebar|0"
+      }
+    }
+  }
+}
+```
+
+---
+
+## Quick Start (Local Development)
 
 ```bash
 npm install
@@ -38,10 +71,10 @@ HTTP endpoint: `http://localhost:5004/docs/mcp`
 ```json
 {
   "mcpServers": {
-    "tvc-docs": {
+    "mcp-docs": {
       "command": "node",
       "args": ["dist/index.js"],
-      "cwd": "C:/path/to/mcp-tvc-docs",
+      "cwd": "C:/path/to/mcp-docs",
       "env": {
         "TRANSPORT": "stdio",
         "SEED_URLS": "TVC Classic|https://products.technia.com/app/docs/tvc-documentation-2025.4.0/tvc/install/index.html|sidebar|0"
@@ -56,7 +89,7 @@ HTTP endpoint: `http://localhost:5004/docs/mcp`
 ```json
 {
   "mcpServers": {
-    "tvc-docs": {
+    "mcp-docs": {
       "type": "http",
       "url": "http://localhost:5004/docs/mcp"
     }
@@ -73,7 +106,7 @@ HTTP endpoint: `http://localhost:5004/docs/mcp`
 | `TRANSPORT`         | `http`                    | Transport mode: `stdio` or `http`                  |
 | `PORT`              | `5004`                    | HTTP server port                                   |
 | `SEED_URLS`         | _required_                | Documentation sources (see format below)           |
-| `DB_PATH`           | `./data/tvc-docs.db`      | SQLite database path                               |
+| `DB_PATH`           | `./data/mcp-docs.db`      | SQLite database path                               |
 | `INIT_ON_START`     | `true`                    | Auto-index on startup                              |
 | `CRAWL_MAX_PAGES`   | `1000`                    | Max pages per source                               |
 | `CRAWL_MAX_DEPTH`   | `5`                       | Max crawl depth                                    |

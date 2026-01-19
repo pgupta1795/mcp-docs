@@ -44,7 +44,7 @@ const envSchema=z.object({
 	CRAWL_MAX_DEPTH: z.string().default('5').transform(Number),
 	CRAWL_MAX_PAGES: z.string().default('1000').transform(Number),
 	INIT_ON_START: z.string().default('true').transform(val => val!=='false'),
-	DB_PATH: z.string().default('./data/tvc-docs.db'),
+	DB_PATH: z.string().default('./data/mcp-docs.db'),
 	CACHE_SIZE: z.string().default('100').transform(Number),
 	// Search configuration
 	SEARCH_MODE: z.enum(['FTS_ONLY','SEMANTIC_ONLY','HYBRID']).default('SEMANTIC_ONLY'),
